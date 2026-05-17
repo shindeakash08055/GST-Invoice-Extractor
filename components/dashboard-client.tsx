@@ -28,6 +28,10 @@ export function DashboardClient() {
   const [actionError, setActionError] = useState("");
   const [busyInvoiceId, setBusyInvoiceId] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<ExtractedInvoice[]>([]);
+  const [profile, setprofile] = useState<any>(null);
+  const freeLimitReached =
+  profile?.plan === "free" &&
+  profile?.invoice_count >= 5;
 
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();
@@ -40,6 +44,14 @@ export function DashboardClient() {
 
       setEmail(data.user.email ?? "Authenticated user");
       setIsCheckingSession(false);
+
+const { data: profileData } = await supabase
+  .from("profiles")
+  .select("*")
+  .eq("id", data.user.id)
+  .single();
+
+setprofile(profileData);
 
       setIsLoadingInvoices(true);
       const { data: rows, error: rowsError } = await supabase
@@ -171,6 +183,18 @@ export function DashboardClient() {
       <UploadPanel
         onExtracted={(invoice) => setInvoices((current) => [invoice, ...current])}
       />
+    {profile ? (
+      <div className="mt-4 rounded-lg border border-ink/10 bg-white p-4">
+      <p className="text-sm font-bold">
+      Plan: {profile.plan}
+      </p>
+
+      <p className="mt-1 text-sm text-ink/70">
+      Invoices Used: {profile.invoice_count}/5
+      </p>
+      </div>
+      ) : null}
+
       {isLoadingInvoices ? (
         <p className="mt-4 rounded-lg border border-ink/10 bg-white px-4 py-3 text-sm font-semibold text-ink/60">
           Loading saved extractions...
